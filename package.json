@@ -1,0 +1,51 @@
+{
+	"name": "@nuogz/web-app-tip",
+	"version": "2.0.0",
+	"description": "Tips component for displaying extra info on the interface in Nuogz Web App, based on CSS Anchor Positioning and Vue 3",
+	"author": "DanoR",
+	"license": "LGPL-3.0-or-later",
+	"repository": {
+		"type": "git",
+		"url": "github:nuogz/vue-tip"
+	},
+	"private": false,
+	"type": "module",
+	"typesSource": [
+		"browser",
+		"vue",
+		"postcss@node-config",
+		"uno@node-config"
+	],
+	"sideEffects": false,
+	"engines": {
+		"node": ">=24"
+	},
+	"main": "./index.js",
+	"files": [
+		"index.js",
+		"src/**",
+		"**/*.d.ts"
+	],
+	"typings": "./types/index.d.ts",
+	"scripts": {
+		"declare": "vue-tsc --declaration --emitDeclarationOnly"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.33.0",
+		"@stylistic/eslint-plugin-js": "^4.4.1",
+		"@unocss/postcss": "66.4.2",
+		"@unocss/preset-mini": "66.4.2",
+		"eslint": "^9.33.0",
+		"eslint-plugin-vue": "^10.4.0",
+		"globals": "^16.3.0",
+		"postcss": "^8.5.6",
+		"postcss-sass": "^0.5.0",
+		"sass": "^1.90.0",
+		"unocss": "^66.4.2",
+		"vue": "^3.5.19",
+		"vue-tsc": "^3.0.6"
+	},
+	"peerDependencies": {
+		"vue": "^3.5.19"
+	}
+}

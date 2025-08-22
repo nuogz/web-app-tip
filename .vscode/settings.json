@@ -1,0 +1,30 @@
+{
+	"explorer.fileNesting.patterns": {
+		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig.json, eslint.config.js, .gitignore, CHANGELOG.md, README.md, LICENSE",
+		"vite.config.js": "postcss.config.js, uno.config.js"
+	},
+	"files.eol": "\n",
+	"files.insertFinalNewline": true,
+	"files.trimFinalNewlines": true,
+	"files.trimTrailingWhitespace": true,
+	"javascript.preferences.importModuleSpecifierEnding": "js",
+	"html.format.enable": false,
+	"sass.format.enabled": false,
+	"vue.inlayHints.missingProps": true,
+	"[vue]": {
+		"editor.defaultFormatter": "Vue.volar"
+	},
+	"cssvar.postcssSyntax": {
+		"postcss-sass": [
+			"sass"
+		]
+	},
+	"cssvar.files": [
+		"**/*.css",
+		"**/*.sass"
+	],
+	"cssvar.ignore": [
+		"**/node_modules/**",
+		"./dist/**"
+	],
+}
