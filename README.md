@@ -26,7 +26,7 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 <template>
   <AppOrbit>...</AppOrbit>
 
-  <AppObrit />
+  <AppTip />
 </template>
 <script setup>
   import AppTip, { install as installAppTip } from '@nuogz/web-app-tip';

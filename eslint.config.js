@@ -1,11 +1,12 @@
 /**
  * @file @nuogz/dynamic-eslint-config
  * @author DanoR
- * @version 5.4.2 2025.08.18 13
+ * @version 5.5.1+25090510
  * @requires globals
  * @requires @eslint/js
- * @requires @stylistic/eslint-plugin-js
+ * @requires @stylistic/eslint-plugin
  * @requires eslint-plugin-vue@^10 (optional)
+ * @link https://gist.github.com/zheung/60a57c1bd87a82296fdf22dd9c277dec
  */
 
 
@@ -15,7 +16,7 @@ import { fileURLToPath } from 'url';
 
 import globals from 'globals';
 import js from '@eslint/js';
-import stylistic from '@stylistic/eslint-plugin-js';
+import stylistic from '@stylistic/eslint-plugin';
 
 
 
@@ -40,7 +41,7 @@ const configs = [
 
 			stylistic$indent: [2, 'tab', { ignoredNodes: ['TemplateLiteral', 'CallExpression>ObjectExpression:not(:first-child)'], ignoreComments: true, SwitchCase: 1 }],
 			stylistic$linebreakStyle: [2, 'unix'],
-			stylistic$quotes: [2, 'single', { avoidEscape: true, allowTemplateLiterals: true }],
+			stylistic$quotes: [2, 'single', { avoidEscape: true, allowTemplateLiterals: 'always' }],
 			stylistic$commaDangle: [2, 'only-multiline'],
 			semi: [2],
 			noUnusedVars: [2, { vars: 'all', args: 'none' }],
