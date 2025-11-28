@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v2.1.1 - 2025.11.28 16
+* regular: bump up dependencies
+
+
 ## v2.1.0 - 2025.11.28 16
 * refactor!: medium-scale refactoring of all related mouse hover/click logic to unify display behavior
   * the concept of `pinned` code is now fully integrated into the `showed` feature

@@ -1,6 +1,6 @@
 {
 	"name": "@nuogz/web-app-tip",
-	"version": "2.1.0",
+	"version": "2.1.1",
 	"description": "Tips component for displaying extra info on the interface in Nuogz Web App, based on CSS Anchor Positioning and Vue 3",
 	"author": "DanoR",
 	"license": "LGPL-3.0-or-later",
