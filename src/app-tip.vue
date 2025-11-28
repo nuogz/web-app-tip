@@ -6,14 +6,16 @@
 				positionArea: tip.state.areaAdjust || tip.area,
 				transform: `translateX(0px) translateY(0px)`,
 				padding: tip.state.padding,
-				visibility: tip.pinned ? 'visible' : undefined,
+				visibility: tip.showed$script ? 'visible' : undefined,
 			}"
-			:intangible="brop(tip.state.intangible == 'box')"
+			:intangible="bttr(tip.state.intangible == 'box')"
 		>
 			<app-tip
 				v-if="!tip.teleport"
 				:theme="tip.state.theme || 'base'"
-				:intangible="brop(tip.state.intangible == 'tip')"
+				:intangible="bttr(tip.state.intangible == 'tip')"
+				:arrow="bttr(tip.state.arrow)"
+				:area="tip.state.areaAdjust || tip.area"
 			>{{ tip.content }}</app-tip>
 		</app-tip-box>
 		<app-tip-shadow ref="tip-shadows" :uuid="uuid"
@@ -75,12 +77,6 @@ import { computed, nextTick, ref, shallowReactive, useTemplateRef, watch } from 
 /** @typedef {import('../bases.d.ts').Tip} Tip */
 
 
-
-/** @type {import('vue').Ref<Object<string,Tip>>} */
-const $tips = ref({});
-const $tipsHoverable = computed(() => Object.values($tips.value).filter(tip => tip.state.show$hover || tip.misc.showTemp$click));
-
-
 /** @type {import('vue').ShallowRef<HTMLElement[]|null>} */
 const $boxesTip = useTemplateRef('tip-boxes');
 /** @type {import('vue').ShallowRef<HTMLElement[]|null>} */
@@ -88,9 +84,33 @@ const $shadowsTip = useTemplateRef('tip-shadows');
 
 
 
-/** @param {Tip} tip */
-const listenUnpin = tip => {
-	document.addEventListener('mousedown', tip.misc.mousedownUnpin = event => {
+/** @type {import('vue').Ref<Object<string,Tip>>} */
+const $tips = ref({});
+const $tipsHoverable = computed(() => Object.values($tips.value).filter(tip => tip.state.show$hover));
+
+
+
+/**
+ * 鼠标离开后隐藏Tip
+ * @param {Tip} tip
+ */
+const listenHide$mouseleave = tip => {
+	if(tip.misc.hide$mouseleave) { return; }
+
+	tip.el.addEventListener('mouseleave',
+		tip.misc.hide$mouseleave = () => tip.hide(),
+		{ once: true },
+	);
+};
+
+/**
+ * 全局鼠标按下后隐藏Tip
+ * @param {Tip} tip
+ */
+const listenHide$mousedownGlobal = tip => {
+	if(tip.misc.hide$mousedownGlobal) { return; }
+
+	document.addEventListener('mousedown', tip.misc.hide$mousedownGlobal = event => {
 		const target = event.target;
 		if(target == tip.el) { return; }
 		if(target == tip.elBox || target.parentNode == tip.elBox) { return; }
@@ -130,13 +150,12 @@ const listenUnpin = tip => {
 		target.addEventListener('mouseup', () => {
 			// 没在滚动条上或没有滚动过 ==> 点击
 			if(!onScrollbar || !scrolled) {
-				tip.pinned = false;
-
-				document.removeEventListener('mousedown', tip.misc.mousedownUnpin);
+				tip.hide();
 			}
 		}, { once: true });
 	});
 };
+
 
 /**
  * @param {Tip} tip
@@ -163,31 +182,51 @@ const applyTipBind = (tip, bind) => {
 
 
 
-	// 功能：全局解除固定
-	// unpin$clickGlobal ==> （默认：true）点击全局可以取消Tip的固定状态
-	const unpin$clickGlobal = tip.state.unpin$clickGlobal =
-		arg?.unpin$clickGlobal === false || arg?.unpin$clickGlobal == 'false' || modifiers.noUnpinGlobal ? false : true;
+	// 功能：全局点击隐藏
+	// hide$clickGlobal ==> （默认：true）点击全局隐藏Tip
+	const hide$clickGlobal = tip.state.hide$clickGlobal =
+		arg?.hide$clickGlobal === false || arg?.hide$clickGlobal == 'false' || modifiers.noUnpinGlobal ? false : true;
+
 
 
 	// 功能：悬停行为
-	// show$hover ==> （默认：true）鼠标悬停目标时显示Tip
+	// show$hover ==> （默认：true）悬停主体时显示Tip（离开隐藏）
+	// 悬停显示功能不通过事件监听器实现，使用原生CSS即可实现
 	tip.state.show$hover =
 		arg?.hover === false || arg?.hover == 'false' || modifiers.noHoverShow ? false
 			: arg?.hover == 'show' ? true
 				: arg?.hover == 'pin' ? false : true;
 
 
-	// pinFlip$click ==> （默认：false）点击主体可以切换Tip的固定状态
+	// pin$hover ==> （默认：false）悬停主体时显示Tip（离开不隐藏）
+	const pinOld$hover = tip.state.pin$hover;
+	const pin$hover = tip.state.pin$hover =
+		arg?.hover == 'pin' || modifiers.hoverPin ? true : false;
+
+	if(!pinOld$hover && pin$hover) {
+		tip.el.addEventListener('mouseenter', tip.misc.hoverPin = () => {
+			tip.show(false, hide$clickGlobal);
+		});
+	}
+	else if(!pin$hover) {
+		tip.el.removeEventListener('mouseenter', tip.misc.hoverPin);
+	}
+
+
+
+	// 功能：点击行为
+	// pinFlip$click ==> （默认：false）点击主体切换Tip（离开不隐藏）
 	const pinFlipOld$click = tip.state.pinFlip$click;
 	const pinFlip$click = tip.state.pinFlip$click =
 		arg?.click == 'pin-flip' || modifiers.clickPinFlip ? true : false;
 
 	if(!pinFlipOld$click && pinFlip$click) {
 		tip.el.addEventListener('click', tip.misc.clickPinFlip = () => {
-			tip.pinned = !tip.pinned;
-
-			if(tip.pinned && unpin$clickGlobal) {
-				listenUnpin(tip);
+			if(tip.showed$script) {
+				tip.hide();
+			}
+			else {
+				tip.show(false, hide$clickGlobal);
 			}
 		});
 	}
@@ -196,19 +235,14 @@ const applyTipBind = (tip, bind) => {
 	}
 
 
-	// pin$click ==> （默认：false）点击主体可以切换Tip的固定状态
+	// pin$click ==> （默认：false）点击主体显示Tip（离开不隐藏）
 	const pinOld$click = tip.state.pin$click;
 	const pin$click = tip.state.pin$click =
 		arg?.click == 'pin' || modifiers.clickPin ? true : false;
 
 	if(!pinOld$click && pin$click) {
 		tip.el.addEventListener('click', tip.misc.clickPin = () => {
-			const pinnedOld = tip.pinned;
-			tip.pinned = true;
-
-			if(!pinnedOld && unpin$clickGlobal) {
-				listenUnpin(tip);
-			}
+			tip.show(false, hide$clickGlobal);
 		});
 	}
 	else if(!pin$click) {
@@ -216,21 +250,18 @@ const applyTipBind = (tip, bind) => {
 	}
 
 
-	// 功能：单击行为
-	// showFlip$click ==> （默认：false）点击主体可以切换Tip显示隐藏
+	// showFlip$click ==> （默认：false）点击主体切换Tip（离开隐藏）
 	const showFlipOld$click = tip.state.showFlip$click;
 	const showFlip$click = tip.state.showFlip$click =
 		arg?.click == 'show-flip' || modifiers.clickShowFlip ? true : false;
 
 	if(!showFlipOld$click && showFlip$click) {
 		tip.el.addEventListener('click', tip.misc.clickShowFlip = () => {
-			tip.misc.showTemp$click = !tip.misc.showTemp$click;
-
-			if(tip.misc.showTemp$click) {
-				tip.el.addEventListener('mouseleave',
-					() => tip.misc.showTemp$click = false,
-					{ once: true }
-				);
+			if(tip.showed$script) {
+				tip.hide();
+			}
+			else {
+				tip.show(true, hide$clickGlobal);
 			}
 		});
 	}
@@ -239,21 +270,14 @@ const applyTipBind = (tip, bind) => {
 	}
 
 
-	// show$click ==> （默认：false）点击主体可以显示Tip
+	// show$click ==> （默认：false）点击主体显示Tip（离开隐藏）
 	const showOld$click = tip.state.show$click;
 	const show$click = tip.state.show$click =
 		arg?.click == 'show' || modifiers.clickShow ? true : false;
 
 	if(!showOld$click && show$click) {
 		tip.el.addEventListener('click', tip.misc.clickShow = () => {
-			const showTemp$click = tip.misc.showTemp$click;
-			tip.misc.showTemp$click = true;
-
-			if(!showTemp$click && tip.misc.showTemp$click) {
-				tip.el.addEventListener('mouseleave',
-					() => tip.misc.showTemp$click = false,
-					{ once: true });
-			}
+			tip.show(true, hide$clickGlobal);
 		});
 	}
 	else if(!show$click) {
@@ -311,7 +335,7 @@ const applyTipBind = (tip, bind) => {
 
 
 		elBox.addEventListener('transitionend', () => {
-			tip.showed = getComputedStyle(elBox).visibility != 'hidden';
+			tip.showed$hover = getComputedStyle(elBox).visibility != 'hidden';
 
 			if(!tip.state.autoArea) { return; }
 
@@ -338,6 +362,18 @@ const applyTipBind = (tip, bind) => {
 		const autoAreaOld = tip.state.autoArea;
 		const autoArea = tip.state.autoArea =
 			arg?.autoArea === false || arg?.autoArea == 'false' || modifiers.noAutoArea ? false : true;
+
+
+		// 功能：箭头
+		// arrow ==> （默认：true）显示箭头
+		tip.state.arrow =
+			arg?.arrow === false || arg?.arrow == 'false' || modifiers.noArrow
+				? false : true;
+
+
+		// 功能：偏移
+		// offset ==> 偏移距离，默认4px，偏移距离最终会反映在padding上
+		tip.state.padding = parsePadding(tip);
 
 
 		if(!autoAreaOld && autoArea) {
@@ -404,15 +440,13 @@ const applyTipBind = (tip, bind) => {
 
 					if(areasFallback[0] && areasFallback[0] != tip.area) {
 						tip.state.areaAdjust = areasFallback[0];
-
-						tip.state.padding = parsePadding(tip);
 					}
 				}
 				else {
 					tip.state.areaAdjust = '';
-
-					tip.state.padding = parsePadding(tip);
 				}
+
+				tip.state.padding = parsePadding(tip);
 			}, {
 				threshold: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
 			});
@@ -424,6 +458,15 @@ const applyTipBind = (tip, bind) => {
 		}
 	};
 	waitElement();
+
+	if(arg?.refInstance) {
+		if(typeof arg.refInstance == 'function') {
+			arg.refInstance(tip);
+		}
+		else if(arg.refInstance === true) {
+			arg.instance = tip;
+		}
+	}
 };
 
 
@@ -432,7 +475,7 @@ const applyTipBind = (tip, bind) => {
  * @param {DirectiveBinding} bind
  * @return {Tip|undefined}
  */
-const cerateTip = (el, bind) => {
+const createTip = (el, bind) => {
 	const { arg, value, modifiers } = bind;
 
 
@@ -450,7 +493,6 @@ const cerateTip = (el, bind) => {
 
 	if(teleport) { arg.uuid = uuid; }
 
-
 	return shallowReactive({
 		uuid,
 
@@ -466,11 +508,29 @@ const cerateTip = (el, bind) => {
 
 		area: '',
 
-		showed: false,
-		pinned: false,
+		showed$script: false,
+		showed$hover: false,
 
 		state: shallowReactive({}),
 		misc: shallowReactive({}),
+
+		show(hide$leave, hide$clickGlobal) {
+			this.showed$script = true;
+
+			if(hide$leave) { listenHide$mouseleave(this); }
+
+			if(hide$clickGlobal) { listenHide$mousedownGlobal(this); }
+		},
+
+		hide() {
+			this.showed$script = false;
+
+			this.el.removeEventListener('mouseleave', this.misc.hide$mouseleave);
+			this.misc.hide$mouseleave = null;
+
+			document.removeEventListener('mousedown', this.misc.hide$mousedownGlobal);
+			this.misc.hide$mousedownGlobal = null;
+		},
 	});
 };
 
@@ -483,8 +543,7 @@ const cerateTip = (el, bind) => {
 const insertTip = (el, bind) => {
 	if(!bind) { return; }
 
-
-	const tip = cerateTip(el, bind);
+	const tip = createTip(el, bind);
 	if(!tip) { return; }
 
 	el.setAttribute('app-tip-id', tip.uuid);
@@ -529,26 +588,108 @@ const deleteTip = el => {
 };
 $$.deleteTip = deleteTip;
 
+const codes$area = {
+	1: 'top left',
+	2: 'top span-right',
+	3: 'top center',
+	4: 'top span-left',
+	5: 'top right',
+	6: 'right span-bottom',
+	7: 'right center',
+	8: 'right span-top',
+	9: 'bottom right',
+	10: 'bottom span-left',
+	11: 'bottom center',
+	12: 'bottom span-right',
+	13: 'bottom left',
+	14: 'left span-top',
+	15: 'left center',
+	16: 'left span-bottom',
 
+	s1: 'top center',
+	s2: 'right center',
+	s3: 'bottom center',
+	s4: 'left center',
+
+	c1: 'top left',
+	c2: 'top right',
+	c3: 'bottom right',
+	c4: 'bottom left',
+
+	e1: 'top span-right',
+	e2: 'top span-left',
+	e3: 'right span-bottom',
+	e4: 'right span-top',
+	e5: 'bottom span-left',
+	e6: 'bottom span-right',
+	e7: 'left span-top',
+	e8: 'left span-bottom',
+};
 const areasAround = [
-	'top left',
-	'top center',
-	'top right',
-	'right center',
-	'bottom right',
-	'bottom center',
-	'bottom left',
-	'left center',
-];
+	1, 2, 3, 4, 5,
+	6, 7, 8,
+	9, 10, 11, 12, 13,
+	14, 15, 16
+].map(code => codes$area[code]);
 const areasFallbackOpposite$area = {
-	'top left': ['bottom right', 'top right', 'bottom left'],
-	'top right': ['bottom left', 'top left', 'bottom left'],
-	'bottom right': ['top left', 'bottom left', 'top right'],
-	'bottom left': ['top right', 'bottom right', 'top left'],
-	'top center': ['bottom center', 'right center', 'left center'],
-	'right center': ['left center', 'top center', 'bottom center'],
-	'bottom center': ['top center', 'right center', 'left center'],
-	'left center': ['right center', 'top center', 'bottom center'],
+	'top center' /* s1 */: ['s3', 's4', 's2'].map(code => codes$area[code]),
+	'right center' /* s2 */: ['s4', 's1', 's3'].map(code => codes$area[code]),
+	'bottom center' /* s3 */: ['s1', 's2', 's4'].map(code => codes$area[code]),
+	'left center' /* s4 */: ['s2', 's3', 's1'].map(code => codes$area[code]),
+
+	'top left' /* c1 */: ['c3', 'c4', 'c2'].map(code => codes$area[code]),
+	'top right' /* c2 */: ['c4', 'c1', 'c3'].map(code => codes$area[code]),
+	'bottom right' /* c3 */: ['c1', 'c2', 'c4'].map(code => codes$area[code]),
+	'bottom left' /* c4 */: ['c2', 'c3', 'c1'].map(code => codes$area[code]),
+
+	'top span-right' /* e1 2 */: [
+		3, 4,
+		12, 11, 10,
+		16, 15, 14,
+		6, 7, 8,
+	].map(code => codes$area[code]),
+	'top span-left' /* e2 4 */: [
+		3, 2,
+		10, 11, 12,
+		6, 7, 8,
+		16, 15, 14,
+	].map(code => codes$area[code]),
+	'right span-bottom' /* e3 6 */: [
+		7, 8,
+		16, 15, 14,
+		4, 3, 2,
+		10, 11, 12,
+	].map(code => codes$area[code]),
+	'right span-top' /* e4 8 */: [
+		7, 6,
+		14, 15, 16,
+		10, 11, 12,
+		4, 3, 2,
+	].map(code => codes$area[code]),
+	'bottom span-left' /* e5 10 */: [
+		11, 12,
+		4, 3, 2,
+		8, 7, 6,
+		14, 15, 16,
+	].map(code => codes$area[code]),
+	'bottom span-right' /* e6 12 */: [
+		11, 10,
+		2, 3, 4,
+		14, 15, 16,
+		8, 7, 6,
+	].map(code => codes$area[code]),
+	'left span-top' /* e7 14 */: [
+		15, 16,
+		8, 7, 6,
+		12, 11, 10,
+		2, 3, 4,
+	].map(code => codes$area[code]),
+	'left span-bottom' /* e8 16 */: [
+		15, 14,
+		6, 7, 8,
+		2, 3, 4,
+		12, 11, 10,
+	].map(code => codes$area[code]),
 };
 const valuesAreaPosition$modifier = {
 	center: 'center',
@@ -556,10 +697,10 @@ const valuesAreaPosition$modifier = {
 	bottom: 'bottom',
 	left: 'left',
 	right: 'right',
-	// spanTop: 'span-top',
-	// spanBottom: 'span-bottom',
-	// spanLeft: 'span-left',
-	// spanRight: 'span-right',
+	spanTop: 'span-top',
+	spanBottom: 'span-bottom',
+	spanLeft: 'span-left',
+	spanRight: 'span-right',
 };
 const orderModifier = ['top', 'bottom', 'center', 'left', 'right'];
 
@@ -581,7 +722,7 @@ const parseModifierArea = modifiers => {
 
 /** @param {Tip} tip */
 const parsePadding = tip => {
-	const offset = tip.arg?.offset;
+	const offset = tip.arg?.offset ?? 4;
 	const areas = (tip.state.areaAdjust || tip.area).split(' ');
 
 	const paddings = [
@@ -603,22 +744,83 @@ const parsePadding = tip => {
 app-tip-box
 	@apply block absolute bg-transparent
 	@apply invisible duration-25
-	&:hover
-		@apply visible
 	&[intangible]
 		@apply pointer-events-none select-none
 
 app-tip
 	@apply relative block
-	--app-tip-back: var(--contrast)
+	--app-tip-text: var(--main-back)
+	--app-tip-back: var(--main-solid)
 	&[intangible]
 		@apply pointer-events-none select-none
 	&[theme=base]
-		@apply p-2 py-1.5 rounded-lg shadow-d1-md ws-pre
+		@apply p-2 py-1.5 rounded-md ws-pre
+		color: var(--app-tip-text)
 		background-color: var(--app-tip-back)
 	&[theme=base-nowrap]
-		@apply p-2 py-1.5 rounded-lg shadow-d1-md ws-nowrap
+		@apply p-2 py-1.5 rounded-md ws-nowrap
+		color: var(--app-tip-text)
 		background-color: var(--app-tip-back)
+
+
+	&[arrow]::before
+		content: ''
+		--app-tip-arrow-size: 4px
+		@apply block absolute w-0 h-0 border-transparent
+
+	&[arrow][area~=top]::before
+		@apply bottom--2
+		left: calc(50% - var(--app-tip-arrow-size))
+		border-left-width: var(--app-tip-arrow-size)
+		border-right-width: var(--app-tip-arrow-size)
+		border-top: calc(var(--app-tip-arrow-size) * 2) solid var(--app-tip-back)
+	&[arrow][area~=bottom]::before
+		@apply top--2
+		left: calc(50% - var(--app-tip-arrow-size))
+		border-left-width: var(--app-tip-arrow-size)
+		border-right-width: var(--app-tip-arrow-size)
+		border-bottom: calc(var(--app-tip-arrow-size) * 2) solid var(--app-tip-back)
+	&[arrow][area~=left]::before
+		@apply right--2
+		top: calc(50% - var(--app-tip-arrow-size))
+		border-top-width: var(--app-tip-arrow-size)
+		border-bottom-width: var(--app-tip-arrow-size)
+		border-left: calc(var(--app-tip-arrow-size) * 2) solid var(--app-tip-back)
+	&[arrow][area~=right]::before
+		@apply left--2
+		top: calc(50% - var(--app-tip-arrow-size))
+		border-top-width: var(--app-tip-arrow-size)
+		border-bottom-width: var(--app-tip-arrow-size)
+		border-right: calc(var(--app-tip-arrow-size) * 2) solid var(--app-tip-back)
+
+	&[arrow][area~=top][area~=left]::before
+		@apply top-unset left-unset
+		@apply bottom--2 right--1
+		border: unset
+		border-top: calc(var(--app-tip-arrow-size) * 3) solid var(--app-tip-back)
+		border-left: calc(var(--app-tip-arrow-size) * 3) solid transparent
+		transform: rotate(-30deg)
+	&[arrow][area~=top][area~=right]::before
+		@apply top-unset right-unset
+		@apply bottom--2 left--1
+		border: unset
+		border-top: calc(var(--app-tip-arrow-size) * 3) solid var(--app-tip-back)
+		border-right: calc(var(--app-tip-arrow-size) * 3) solid transparent
+		transform: rotate(30deg)
+	&[arrow][area~=bottom][area~=left]::before
+		@apply bottom-unset left-unset
+		@apply top--2 right--1
+		border: unset
+		border-bottom: calc(var(--app-tip-arrow-size) * 3) solid var(--app-tip-back)
+		border-left: calc(var(--app-tip-arrow-size) * 3) solid transparent
+		transform: rotate(30deg)
+	&[arrow][area~=bottom][area~=right]::before
+		@apply bottom-unset right-unset
+		@apply top--2 left--1
+		border: unset
+		border-bottom: calc(var(--app-tip-arrow-size) * 3) solid var(--app-tip-back)
+		border-right: calc(var(--app-tip-arrow-size) * 3) solid transparent
+		transform: rotate(-30deg)
 
 app-tip-shadow
 	@apply block absolute invisible pointer-events-none select-none

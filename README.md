@@ -8,12 +8,12 @@
 > 后续将提供机器翻译的英文版。\
 > A machine-translated English version will be provided later.
 
-# @nuogz/web-app-tip 贴士
+# @nuogz/web-app-tip 贴纸
 ![Version](https://img.shields.io/github/package-json/v/nuogz/web-app-tip?style=flat-square)
 ![License](https://img.shields.io/github/license/nuogz/web-app-tip?style=flat-square)
 
 Tips component for displaying extra info on the interface in Nuogz Web App, based on [CSS Anchor Positioning](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning) and [Vue 3](https://vuejs.org/)\
-贴士用于在界面中显示额外的信息，提供即时的指引或补充说明，以辅助用户理解和使用功能。用于Nuogz Web App，基于CSS Anchor Positioning、Vue3、UnoCSS
+贴纸用于在界面中显示额外的信息，提供即时的指引或补充说明，以辅助用户理解和使用功能。用于Nuogz Web App，基于CSS Anchor Positioning、Vue3、UnoCSS
 
 经过一系列的迭代，从原来的提示组件`vue-tip`升级重构为全新的`web-app-tip`
 
@@ -38,9 +38,9 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 </script>
 ````
 
-贴士分为两部分，自定义指令`v-tip`与组件`<AppTip>`。
+贴纸分为两部分，自定义指令`v-tip`与组件`<AppTip>`。
 `v-tip`指令通过install函数安装。
-`<AppTip>`组件用于动态渲染展示贴士所需要的HTML元素。
+`<AppTip>`组件用于动态渲染展示贴纸所需要的HTML元素。
 
 **请将`<AppTip>`置于app的根元素下**
 
@@ -82,7 +82,7 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 
 ## 功能与参数说明
 ### 0、显示内容
-显示额外内容是贴士的核心基础功能，支持多种来源
+显示额外内容是贴纸的核心基础功能，支持多种来源
 #### value
 基础用法
 ````html
@@ -105,7 +105,7 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 
 由于`<Teleport>`的[目标元素必须与`<Teleport>`在同一个挂载/更新周期内渲染](https://cn.vuejs.org/guide/built-ins/teleport.html#deferred-teleport)。\
 要使用该功能，必须向`v-tip`传递一个`TipArg`，且`TipArg.teleport`设置为`true`。\
-当对应的`<app-tip-box>`渲染后，贴士会将`<app-tip-box>`传递到`TipArg.teleportTo`中。\
+当对应的`<app-tip-box>`渲染后，贴纸会将`<app-tip-box>`传递到`TipArg.teleportTo`中。\
 在渲染前，仍需向`<Teleport>`的`to`属性提供有效值以过渡，如`body`
 
 最佳实践：
@@ -145,6 +145,9 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 | `left`   | 居左 | .left   |
 | `right`  | 居右 | .right  |
 
+位置功能依赖于CSS的`position-area`。因此`area`也可以组合地使用`span-*`，如设置为`top span-right`。
+通常情况下显示的位置是正确的。但是自动位置功能是代码实时检后测调整的，并未对`span-*`进行完整的兼容，可能会意外的行为。
+
 ### 2、自动位置
 `autoArea` 默认值：true
 
@@ -164,30 +167,30 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 | ------- | --------------------- | ------------ |
 | `false` | 什么都不做            | .noHoverShow |
 | `show`  | 显示Tip（离开隐藏）   | -            |
-| `pin`   | 固定Tip（离开不隐藏） | .hoverPin    |
+| `pin`   | 显示Tip（离开不隐藏） | .hoverPin    |
 
-### 4、单击行为
+### 4、点击行为
 `click` 默认值：false
-| 特性        | 作用                      | 修饰符         |
-| ----------- | ------------------------- | -------------- |
-| `false`     | 什么都不做                | -              |
-| `pin-flip`  | 切换固定Tip（离开不隐藏） | .clickPinFlip  |
-| `pin`       | 固定Tip（离开不隐藏）     | .clickPin      |
-| `show-flip` | 切换显隐Tip（离开隐藏）   | .clickShowFlip |
-| `show`      | 显示Tip（离开隐藏）       | .clickShow     |
+| 特性        | 作用                  | 修饰符         |
+| ----------- | --------------------- | -------------- |
+| `false`     | 什么都不做            | -              |
+| `pin-flip`  | 切换Tip（离开不隐藏） | .clickPinFlip  |
+| `pin`       | 显示Tip（离开不隐藏） | .clickPin      |
+| `show-flip` | 切换Tip（离开隐藏）   | .clickShowFlip |
+| `show`      | 显示Tip（离开隐藏）   | .clickShow     |
 
 `click:show-flip|show`适用于`hover:false`的情况，否则行为会被`hover:show`覆盖
 
-### 5、全局解除固定
-`unpin$clickGlobal` 默认值：true
+### 5、全局隐藏
+`hide$clickGlobal` 默认值：true
 
-当Tip固定时，默认全局任意单击后解除固定，以模拟离开且失焦
+当Tip固定时，默认全局其他任意元素点击后隐藏Tip，以模拟离开且失焦
   - 按下后触发滚动，不会导致解除
-  - 当单击是目标元素或Tip元素时，不会导致解除
+  - 当点击是目标元素或Tip元素时，不会导致解除
 
 | 特性    | 作用                       | 修饰符         |
 | ------- | -------------------------- | -------------- |
-| `true`  | 固定后全局任意单击解除固定 | -              |
+| `true`  | 固定后全局任意点击解除固定 | -              |
 | `false` | 什么都不做                 | .noUnpinGlobal |
 
 ### 6、侦听arg参数
@@ -220,7 +223,7 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 
 默认主题通过CSS变量`--app-tip-back: var(--contrast)`来定义背景，你随时可以覆盖这个变量
 
-主题不适用于模板内容。
+主题不适用于模板内容
 
 | 特性          | 作用               | 修饰符  |
 | ------------- | ------------------ | ------- |
@@ -238,12 +241,45 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
   @apply p-2 py-1.5 bg-green-4 rounded-lg shadow-d1-md ws-pre
 </style>
 ````
-因为贴士是`<app>`子元素，所以需要将主题提升到全局。\
+因为贴纸是`<app>`子元素，所以需要将主题提升到全局。\
 建议将主题样式放置在全局位置，或者使用足够独特的名字。不要像演示这样在某个单文件组件中定义
 
 ### 9、偏移
-`offset` 默认值：`0`
+`offset` 默认值：`4`
 
-本事css长度单位。\
+贴纸与目标元素的间隔。会位置自动调整间隔的位置
+
+本质是css长度单位。\
 如果是number类型，会自动补全`px`单位。\
 如果是string类型，则不会做任何修改
+
+### 10、箭头
+`arrow` 默认值：true
+
+在贴纸和目标元素之间显示指向目标元素的三角箭头
+
+已支持在四角位置、span位置显示三角箭头
+
+| 特性    | 作用                             | 修饰符   |
+| ------- | -------------------------------- | -------- |
+| `true`  | 在贴纸和目标元素之间显示三角箭头 | -        |
+| `false` | 不显示三角箭头                   | .noArrow |
+
+### 11、访问实例
+`refInstance` 默认值：null
+
+在一些需要手动控制贴纸显示的常见下，需要直接访问实例。此时可以`TipArg.refInstance`传递`true`或一个回调函数，当实例初始化完毕后，会返回Tip实例：
+
+| 特性          | 回调方式               |
+| ------------- | ---------------------- |
+| `true`        | TipArg.instance = tip; |
+| `(tip) => {}` | 调用函数               |
+
+## CSS变量
+贴纸抽象了设计了CSS变量，以方便调整显示
+
+| CSS变量                | 作用                 | 默认值            |
+| ---------------------- | -------------------- | ----------------- |
+| `--app-tip-text`       | base主题下的文字颜色 | var(--main-back)  |
+| `--app-tip-back`       | base主题下的背景颜色 | var(--main-solid) |
+| `--app-tip-arrow-size` | 箭头尺寸             | 4px               |
