@@ -113,7 +113,7 @@ const listenHide$mousedownGlobal = tip => {
 	document.addEventListener('mousedown', tip.misc.hide$mousedownGlobal = event => {
 		const target = event.target;
 		if(target == tip.el) { return; }
-		if(target == tip.elBox || target.parentNode == tip.elBox) { return; }
+		if(tip.elBox.contains(target)) { return; }
 
 		const style = window.getComputedStyle(target);
 

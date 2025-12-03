@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v2.1.2 - 2025.12.03 17
+* fix: incorrect determination of whether target is a descendant of a elBox when handling global hiding
+* regular: bump up dependencies
+
+
 ## v2.1.1 - 2025.11.28 16
 * regular: bump up dependencies
 
@@ -7,7 +12,7 @@
 ## v2.1.0 - 2025.11.28 16
 * refactor!: medium-scale refactoring of all related mouse hover/click logic to unify display behavior
   * the concept of `pinned` code is now fully integrated into the `showed` feature
-  * new `Tip.show()` and `Tip.hide()` to control display behavior via script;
+  * new `Tip.show()` and `Tip.hide()` to control display behavior via script
   * new `Tip.showed$script` and `Tip.showed$hover`, instead `Tip.showed` and `Tip.pinned`
   * rename `TipArg.hide$clickGlobal` from `unpin$clickGlobal`
 * feat: new `TipArg.refInstance` to access **Tip** instance via **TipArg**
@@ -19,7 +24,7 @@
 * refactor: improve `base` theme to fix incorrect display of Tips in dark mode
   * new CSS variable `--app-tip-text` with default value `var(--main-back)`
   * change CSS variable `--app-tip-back` default value to `var(--main-solid)`
-* adjust: rename all instances of `brop()` to `bttr()`, based on the latest Nuogz Web App environment.
+* adjust: rename all instances of `brop()` to `bttr()`, based on the latest Nuogz Web App environment
 * adjust: experimentally supplemented `span-*` position related around areas
 * adjust: experimentally supplemented `span-*` position related fallback areas
 * docs: update to latest
