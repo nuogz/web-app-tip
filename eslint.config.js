@@ -1,7 +1,7 @@
 /**
  * @file @nuogz/dynamic-eslint-config
  * @author DanoR
- * @version 5.5.1+25090510
+ * @version 5.5.2+26032417
  * @requires globals
  * @requires @eslint/js
  * @requires @stylistic/eslint-plugin
@@ -43,7 +43,7 @@ const configs = [
 			stylistic$linebreakStyle: [2, 'unix'],
 			stylistic$quotes: [2, 'single', { avoidEscape: true, allowTemplateLiterals: 'always' }],
 			stylistic$commaDangle: [2, 'only-multiline'],
-			semi: [2],
+			stylistic$semi: [2],
 			noUnusedVars: [2, { vars: 'all', args: 'none' }],
 			noVar: [2],
 			noConsole: [2],
@@ -85,8 +85,9 @@ if(typesSource.has('browser')) {
 			'**/*.pure.?(c|m)js',
 			'src/**/*.?(c|m)js',
 			'!src/**/*.{api,lib,map}.?(c|m)js',
-			'!src/**/*.lib/**/*.?(c|m)js'
-		]);
+			'!src/**/*.lib/**/*.?(c|m)js',
+			typesSource.has('browser') ? '**/*.vue' : null,
+		].filter(Boolean));
 
 		configs.push({
 			name: 'globals-browser',

@@ -1,7 +1,8 @@
 {
 	"explorer.fileNesting.patterns": {
 		"package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig.json, eslint.config.js, .gitignore, CHANGELOG.md, README.md, LICENSE",
-		"vite.config.js": "postcss.config.js, uno.config.js"
+		"vite.config.js": "postcss.config.js, uno.config.js",
+		"index.js": "index.html, index.env.js, index.color.sass"
 	},
 	"editor.tabSize": 4,
 	"editor.insertSpaces": false,
@@ -11,6 +12,20 @@
 	"files.trimFinalNewlines": true,
 	"files.trimTrailingWhitespace": true,
 	"javascript.preferences.importModuleSpecifierEnding": "js",
+	"typescript.preferences.importModuleSpecifierEnding": "js",
+	"javascript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
+	"javascript.format.insertSpaceAfterKeywordsInControlFlowStatements": false,
+	"javascript.format.semicolons": "insert",
+	"javascript.preferences.quoteStyle": "single",
+	"javascript.suggestionActions.enabled": false,
+	"javascript.updateImportsOnFileMove.enabled": "always",
+	"js/ts.preferences.importModuleSpecifierEnding": "js",
+	"js/ts.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
+	"js/ts.format.insertSpaceAfterKeywordsInControlFlowStatements": false,
+	"js/ts.format.semicolons": "insert",
+	"js/ts.preferences.quoteStyle": "single",
+	"js/ts.suggestionActions.enabled": false,
+	"js/ts.updateImportsOnFileMove.enabled": "always",
 	"html.format.enable": false,
 	"sass.format.enabled": false,
 	"vue.inlayHints.missingProps": true,

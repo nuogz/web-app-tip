@@ -69,8 +69,11 @@ export type Tip = {
 	/** 唯一标识符 */
 	uuid: string;
 
+	/** 贴纸挂载的元素 */
+	mount: Element | false;
+
 	/** 是否为传送内容 */
-	teleport?: boolean;
+	teleport?: boolean | 'in-tip';
 	content: DirectiveBinding['value'];
 
 	arg: DirectiveBinding['arg'];
@@ -116,7 +119,7 @@ export type TipArg = {
 	 *
 	 * 默认值：`false`
 	 */
-	teleport?: boolean;
+	teleport?: boolean | 'in-tip';
 	/**
 	 * 传送内容
 	 */
@@ -177,13 +180,19 @@ export type TipArg = {
 	 *
 	 * 默认值：`base`
 	 */
-	theme?: 'base' | 'base-nowrap' | string;
+	theme?: 'base' | 'base-nowrap' | 'solid' | 'solid-nowrap' | 'prev' | 'prev-nowrap' | 'next' | 'next-nowrap' | string;
 	/**
 	 * 偏移
 	 *
 	 * 默认值：`base`
 	 */
 	offset?: number | string;
+	/**
+	 * 箭头
+	 *
+	 * 默认值：`true`
+	 */
+	arrow?: boolean;
 
 	/**
 	 * 获取Tip实例
@@ -195,4 +204,9 @@ export type TipArg = {
 	 * Tip实例
 	 */
 	instance?: Tip;
+
+	/**
+	 * 贴纸挂载的元素
+	 */
+	mount?: Element | false;
 }

@@ -1,33 +1,81 @@
 <template>
 	<template v-for="tip, uuid of $tips" :key="uuid">
-		<app-tip-box ref="tip-boxes" :uuid="uuid"
-			:style="{
-				positionAnchor: `--uuid-${tip.uuid}`,
-				positionArea: tip.state.areaAdjust || tip.area,
-				transform: `translateX(0px) translateY(0px)`,
-				padding: tip.state.padding,
-				visibility: tip.showed$script ? 'visible' : undefined,
-			}"
-			:intangible="bttr(tip.state.intangible == 'box')"
-		>
-			<app-tip
-				v-if="!tip.teleport"
-				:theme="tip.state.theme || 'base'"
-				:intangible="bttr(tip.state.intangible == 'tip')"
-				:arrow="bttr(tip.state.arrow)"
-				:area="tip.state.areaAdjust || tip.area"
-			>{{ tip.content }}</app-tip>
-		</app-tip-box>
-		<app-tip-shadow ref="tip-shadows" :uuid="uuid"
-			:style="{
-				positionAnchor: `--uuid-${tip.uuid}`,
-				positionArea: tip.area,
-				transform: `translateX(0px) translateY(0px)`,
-				padding: tip.state.padding,
-				width: `${tip.widthTip}px`,
-				height: `${tip.heightTip}px`,
-			}"
-		/>
+		<template v-if="tip.mount">
+			<Teleport :to="tip.mount" defer>
+				<app-tip-box ref="tip-boxes" :uuid="uuid"
+					:style="{
+						positionAnchor: `--uuid-${tip.uuid}`,
+						positionArea: tip.state.areaAdjust || tip.area,
+						transform: `translateX(0px) translateY(0px)`,
+						padding: tip.state.padding,
+						visibility: tip.showed$script ? 'visible' : undefined,
+					}"
+					:intangible="bttr(tip.state.intangible == 'box')"
+				>
+					<app-tip
+						v-if="!tip.teleport"
+						:theme="tip.state.theme || 'base'"
+						:intangible="bttr(tip.state.intangible == 'tip')"
+						:arrow="bttr(tip.state.arrow)"
+						:area="tip.state.areaAdjust || tip.area"
+					>{{ tip.content }}</app-tip>
+					<app-tip
+						v-else-if="tip.teleport == 'in-tip'"
+						:theme="tip.state.theme || 'base'"
+						:intangible="bttr(tip.state.intangible == 'tip')"
+						:arrow="bttr(tip.state.arrow)"
+						:area="tip.state.areaAdjust || tip.area"
+					/>
+				</app-tip-box>
+				<app-tip-shadow ref="tip-shadows" :uuid="uuid"
+					:style="{
+						positionAnchor: `--uuid-${tip.uuid}`,
+						positionArea: tip.area,
+						transform: `translateX(0px) translateY(0px)`,
+						padding: tip.state.padding,
+						width: `${tip.widthTip}px`,
+						height: `${tip.heightTip}px`,
+					}"
+				/>
+			</Teleport>
+		</template>
+		<template v-else>
+			<app-tip-box ref="tip-boxes" :uuid="uuid"
+				:style="{
+					positionAnchor: `--uuid-${tip.uuid}`,
+					positionArea: tip.state.areaAdjust || tip.area,
+					transform: `translateX(0px) translateY(0px)`,
+					padding: tip.state.padding,
+					visibility: tip.showed$script ? 'visible' : undefined,
+				}"
+				:intangible="bttr(tip.state.intangible == 'box')"
+			>
+				<app-tip
+					v-if="!tip.teleport"
+					:theme="tip.state.theme || 'base'"
+					:intangible="bttr(tip.state.intangible == 'tip')"
+					:arrow="bttr(tip.state.arrow)"
+					:area="tip.state.areaAdjust || tip.area"
+				>{{ tip.content }}</app-tip>
+				<app-tip
+					v-else-if="tip.teleport == 'in-tip'"
+					:theme="tip.state.theme || 'base'"
+					:intangible="bttr(tip.state.intangible == 'tip')"
+					:arrow="bttr(tip.state.arrow)"
+					:area="tip.state.areaAdjust || tip.area"
+				/>
+			</app-tip-box>
+			<app-tip-shadow ref="tip-shadows" :uuid="uuid"
+				:style="{
+					positionAnchor: `--uuid-${tip.uuid}`,
+					positionArea: tip.area,
+					transform: `translateX(0px) translateY(0px)`,
+					padding: tip.state.padding,
+					width: `${tip.widthTip}px`,
+					height: `${tip.heightTip}px`,
+				}"
+			/>
+		</template>
 	</template>
 
 	<!-- eslint-disable-next-line vue/require-component-is -->
@@ -309,7 +357,10 @@ const applyTipBind = (tip, bind) => {
 
 	// 功能：主题
 	tip.state.theme = arg?.theme ? arg?.theme?.trim() : 'base';
-
+	const themeModifier = Object.keys(modifiers).find(key => key.startsWith('theme') && key != 'theme');
+	if(themeModifier) {
+		tip.state.theme = themeModifier.replace(/^theme/, '').replace(/([A-Z]+)/g, '-$1').toLowerCase().replace(/^-/, '');
+	}
 
 
 	// 递归等待元素
@@ -328,10 +379,17 @@ const applyTipBind = (tip, bind) => {
 
 
 		tip.elBox = elBox;
+
+
+		if(tip.misc.intersectionObserver && tip.elShadow !== elShadow) {
+			tip.misc.intersectionObserver.unobserve(tip.elShadow);
+			tip.misc.intersectionObserver.observe(elShadow);
+		}
 		tip.elShadow = elShadow;
 
 
-		if(tip.teleport) { tip.arg.teleportTo = elBox; }
+		if(tip.teleport == 'in-tip') { tip.arg.teleportTo = elBox.querySelector('app-tip'); }
+		else if(tip.teleport) { tip.arg.teleportTo = elBox; }
 
 
 		elBox.addEventListener('transitionend', () => {
@@ -374,6 +432,12 @@ const applyTipBind = (tip, bind) => {
 		// 功能：偏移
 		// offset ==> 偏移距离，默认4px，偏移距离最终会反映在padding上
 		tip.state.padding = parsePadding(tip);
+
+
+
+		// 功能：反向传送
+		tip.mount = arg?.mount || false;
+
 
 
 		if(!autoAreaOld && autoArea) {
@@ -479,7 +543,7 @@ const createTip = (el, bind) => {
 	const { arg, value, modifiers } = bind;
 
 
-	const teleport = arg?.teleport === true ? true : false;
+	const teleport = arg?.teleport === true ? true : arg?.teleport == 'in-tip' ? 'in-tip' : false;
 	const content = arg && typeof arg == 'object' && 'value' in arg ? arg.value : value;
 	// content是假值时直接返回不显示
 	if(
@@ -749,18 +813,54 @@ app-tip-box
 
 app-tip
 	@apply relative block
-	--app-tip-text: var(--main-back)
-	--app-tip-back: var(--main-solid)
+
+
 	&[intangible]
 		@apply pointer-events-none select-none
+
+
+	--app-tip-text: var(--gray-text1)
+	--app-tip-back: var(--main-comp2)
 	&[theme=base]
 		@apply p-2 py-1.5 rounded-md ws-pre
-		color: var(--app-tip-text)
-		background-color: var(--app-tip-back)
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
 	&[theme=base-nowrap]
 		@apply p-2 py-1.5 rounded-md ws-nowrap
-		color: var(--app-tip-text)
-		background-color: var(--app-tip-back)
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=prev]
+		--app-tip-back: var(--main-comp)
+		@apply p-2 py-1.5 rounded-md ws-pre
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=prev-nowrap]
+		--app-tip-back: var(--main-comp)
+		@apply p-2 py-1.5 rounded-md ws-nowrap
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=next]
+		--app-tip-back: var(--main-line1)
+		@apply p-2 py-1.5 rounded-md ws-pre
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=next-nowrap]
+		--app-tip-back: var(--main-line1)
+		@apply p-2 py-1.5 rounded-md ws-nowrap
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=deep]
+		--app-tip-back: var(--main-line1)
+		@apply p-2 py-1.5 rounded-md ws-pre
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=deep-nowrap]
+		--app-tip-back: var(--main-line1)
+		@apply p-2 py-1.5 rounded-md ws-nowrap
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=solid]
+		--app-tip-text: var(--contrast)
+		--app-tip-back: var(--main-solid)
+		@apply p-2 py-1.5 rounded-md ws-pre
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
+	&[theme=solid-nowrap]
+		--app-tip-text: var(--contrast)
+		--app-tip-back: var(--main-solid)
+		@apply p-2 py-1.5 rounded-md ws-nowrap
+		@apply color-[var(--app-tip-text)] bg-[--app-tip-back]
 
 
 	&[arrow]::before

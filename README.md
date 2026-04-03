@@ -1,4 +1,4 @@
-> [!IMPORTANT]\
+> [!IMPORTANT]
 > 本库使用了2025最新的CSS特性，不适合用于生产环境。\
 > This library uses the latest 2025 CSS features and is not suitable for production environments.
 >
@@ -7,6 +7,8 @@
 >
 > 后续将提供机器翻译的英文版。\
 > A machine-translated English version will be provided later.
+
+
 
 # @nuogz/web-app-tip 贴纸
 ![Version](https://img.shields.io/github/package-json/v/nuogz/web-app-tip?style=flat-square)
@@ -49,7 +51,9 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
   - app (index.vue)
     - (module.vue)
     - app-tip-box
-      - app-tip (或teleport模板内容)
+      - app-tip
+        - `<teleport-content>` (teleport='in-tip'时，模板内容置于app-tip元素中)
+      - `<teleport-content>` (teleport=true时)
       - app-tip-shadow (用于自动位置功能的相交检测)
 
 如果app使用天轨Orbit组件，那么DOM结构如下：
@@ -60,7 +64,9 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
       - (module.vue)
     - app-moon
     - app-tip-box
-      - app-tip (或teleport模板内容)
+      - app-tip
+        - `<teleport-content>` (teleport='in-tip'时，模板内容置于app-tip元素中)
+      - `<teleport-content>` (teleport=true时)
     - app-tip-shadow (用于自动位置功能的相交检测)
 
 注意：相关元素会根据实际调用次数增多，一个指令对应一套元素。并不是单例模式
@@ -99,14 +105,17 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 </script>
 ````
 #### 模板内容
-此功能用于显示实时渲染的Vue模板
+此功能用于将实时渲染的Vue模板显示为贴纸的内容
 
 为了避免入侵Vue的渲染逻辑，其核心功能将使用Vue内置的[`<Teleport>`](https://cn.vuejs.org/guide/built-ins/teleport.html)组件实现
 
 由于`<Teleport>`的[目标元素必须与`<Teleport>`在同一个挂载/更新周期内渲染](https://cn.vuejs.org/guide/built-ins/teleport.html#deferred-teleport)。\
-要使用该功能，必须向`v-tip`传递一个`TipArg`，且`TipArg.teleport`设置为`true`。\
-当对应的`<app-tip-box>`渲染后，贴纸会将`<app-tip-box>`传递到`TipArg.teleportTo`中。\
+要使用该功能，必须向`v-tip`传递一个`TipArg`，且`TipArg.teleport`设置为`true`或`'in-tip'`。\
+当对应的`<app-tip-box>`渲染后，贴纸会将`<app-tip-box>`赋值到`TipArg.teleportTo`中。\
 在渲染前，仍需向`<Teleport>`的`to`属性提供有效值以过渡，如`body`
+
+当`TipArg.teleport`是`true`时，`TipArg.teleportTo`将会是`<app-tip-box>`。此时`<app-tip-box>`不会存在`<app-tip>`。\
+当`TipArg.teleport`是`'in-tip'`时，`TipArg.teleportTo`将会是`<app-tip>`
 
 最佳实践：
 ````html
@@ -219,16 +228,24 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 ### 8、主题
 `theme` 默认值：`base`
 
-支持自定义主题，通过`[theme=主题名]`定义
+支持自定义主题，通过`[theme=主题名]`定义。\
+也可以通过驼峰式的修饰符定义，如`base-nowrap`主题可用`.themeBaseNowrap`定义
 
-默认主题通过CSS变量`--app-tip-back: var(--contrast)`来定义背景，你随时可以覆盖这个变量
+内置主题基于`web-app`的通用色彩系统，均支持通过CSS变量`--app-tip-text`和`--app-tip-back`来改变贴纸文字和背景的颜色
 
-主题不适用于模板内容
+主题不适用于模板内容，因为使用`teleport=true`时没有`<app-tip>`元素。\
+除非使用`teleport='in-tip'`，此时模板内容传输到`<app-tip>`元素下
 
-| 特性          | 作用               | 修饰符  |
-| ------------- | ------------------ | ------- |
-| `base`        | 默认主题           | -       |
-| `base-nowarp` | 默认主题（不换行） | .nowrap |
+| 特性           | 作用                                              | 文字颜色            | 背景颜色            | 修饰符            |
+| -------------- | ------------------------------------------------- | ------------------- | ------------------- | ----------------- |
+| `base`         | 默认主题                                          | `var(--gray-text1)` | `var(--main-comp2)` | .themeBase        |
+| `base-nowrap`  | 默认主题（不换行）                                | `var(--gray-text1)` | `var(--main-comp2)` | .themeBaseNowrap  |
+| `prev`         | 在默认主题基础上，背景颜色向左偏移2色阶           | `var(--gray-text1)` | `var(--main-comp)`  | .themePrev        |
+| `prev-nowrap`  | 在默认主题基础上，背景颜色向左偏移2色阶（不换行） | `var(--gray-text1)` | `var(--main-comp)`  | .themePrevNowrap  |
+| `next`         | 在默认主题基础上，背景颜色向右偏移2色阶           | `var(--gray-text1)` | `var(--main-line)`  | .themeNext        |
+| `next-nowrap`  | 在默认主题基础上，背景颜色向右偏移2色阶（不换行） | `var(--gray-text1)` | `var(--main-line)`  | .themeNextNowrap  |
+| `solid`        | 主题色的高亮主题，通常不受明暗环境影响            | `var(--contrast)`   | `var(--main-solid)` | .themeSolid       |
+| `solid-nowrap` | 主题色的高亮主题，通常不受明暗环境影响（不换行）  | `var(--contrast)`   | `var(--main-solid)` | .themeSolidNowrap |
 ````html
 <template>
   <button v-tip:[arg]>Im a button</button>
@@ -268,18 +285,34 @@ Tips component for displaying extra info on the interface in Nuogz Web App, base
 ### 11、访问实例
 `refInstance` 默认值：null
 
-在一些需要手动控制贴纸显示的常见下，需要直接访问实例。此时可以`TipArg.refInstance`传递`true`或一个回调函数，当实例初始化完毕后，会返回Tip实例：
+在一些需要手动控制贴纸显示的场景下，需要直接访问实例。此时可以`TipArg.refInstance`传递`true`或一个回调函数，当实例初始化完毕后，会返回Tip实例：
 
 | 特性          | 回调方式               |
 | ------------- | ---------------------- |
 | `true`        | TipArg.instance = tip; |
 | `(tip) => {}` | 调用函数               |
 
+### 12、挂载位置
+`mount` 默认值：false
+
+默认情况下，贴纸显示的内容会挂载到`<AppTip>`组件下，像这是特意设计的。\
+这样做可以避免因为目标的祖先元素设置了限制溢出显示的overflow属性，而导致贴纸无法完整显示的问题。
+
+但在一些极为特殊的场景下，如`<dialog>`元素的`showModal()`，显示模态框时，`<dialog>`中的元素会脱离文档流，导致贴纸找不到锚点。\
+此时可以通过设置`mount`属性，将贴纸传送（依旧是是Vue的Teleport功能）到`mount`属性指定的元素下，如和目标元素处于同一文档流下的某一祖先元素。\
+从而恢复正常显示
+
+
+| 特性      | 作用        |
+| --------- | ----------- |
+| `false`   | 不启用      |
+| `Element` | 某个DOM元素 |
+
 ## CSS变量
 贴纸抽象了设计了CSS变量，以方便调整显示
 
 | CSS变量                | 作用                 | 默认值            |
 | ---------------------- | -------------------- | ----------------- |
-| `--app-tip-text`       | base主题下的文字颜色 | var(--main-back)  |
-| `--app-tip-back`       | base主题下的背景颜色 | var(--main-solid) |
+| `--app-tip-text`       | base主题下的文字颜色 | var(--gray-text1) |
+| `--app-tip-back`       | base主题下的背景颜色 | var(--main-comp2) |
 | `--app-tip-arrow-size` | 箭头尺寸             | 4px               |
